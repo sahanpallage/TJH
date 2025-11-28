@@ -10,6 +10,7 @@ from settings import settings, RAPID_API_KEY
 from models.schemas import JobScannerInput, JobScannerOutput, JobScannerResponse
 from utils.job_scanner import scan_jobs
 from utils.theirstack_service import search_jobs_theirstack, normalize_theirstack_job
+from utils.linkedin_jobspy_service import search_linkedin_jobs
 from services.cache_service import JobCache
 
 
@@ -424,3 +425,69 @@ def get_country_code(country_name: str) -> Optional[str]:
     }
     normalized = country_name.lower().strip()
     return country_map.get(normalized, normalized.upper() if len(normalized) == 2 else None)
+
+
+@app.post("/api/jobs/linkedin", response_model=JobSearchResponse)
+async def search_jobs_linkedin_endpoint(request: JobSearchRequest):
+    """
+    Search for jobs directly on LinkedIn using the JobSpy scraper.
+    Kept separate from JSearch and TheirStack, but returns the same shape.
+    """
+    try:
+        # ---------- CACHE CHECK ----------
+        cache_payload = request.model_dump()
+        cached, hit = cache.get("linkedin", cache_payload, ttl_minutes=60)
+        if hit and cached and cached.data.get("jobs"):
+            logger.info("LinkedIn cache hit")
+            return JobSearchResponse(**cached.data)
+        logger.info("LinkedIn cache miss")
+
+        jobs_data = search_linkedin_jobs(
+            job_title=request.jobTitle,
+            industry=request.industry or "",
+            city=request.city or "",
+            country=request.country or "",
+            date_posted=request.datePosted or "",
+            results_wanted=20,
+        )
+
+        # Limit to 20 for LinkedIn
+        job_responses: List[JobResponse] = []
+        for idx, job in enumerate(jobs_data[:20]):
+            job_responses.append(
+                JobResponse(
+                    id=str(job.get("id", f"linkedin_{idx}")),
+                    title=job.get("title", ""),
+                    company=job.get("company", ""),
+                    location=job.get("location", ""),
+                    city=job.get("city", ""),
+                    state=job.get("state", ""),
+                    country=job.get("country", ""),
+                    salary=job.get("salary", ""),
+                    type=job.get("type", ""),
+                    remote=bool(job.get("remote", False)),
+                    posted=job.get("posted", ""),
+                    description=job.get("description", ""),
+                    applyLink=job.get("applyLink", ""),
+                )
+            )
+
+        response_obj = JobSearchResponse(jobs=job_responses, total=len(job_responses))
+
+        # ---------- CACHE STORE ----------
+        cache.set("linkedin", cache_payload, response_obj.model_dump())
+
+        if len(job_responses) == 0:
+            raise HTTPException(
+                status_code=404,
+                detail="No LinkedIn jobs found matching the criteria. Try adjusting your search parameters.",
+            )
+
+        return response_obj
+
+    except HTTPException:
+        # Re-raise HTTP exceptions as-is
+        raise
+    except Exception as e:
+        logger.exception("Unhandled error in LinkedIn endpoint")
+        raise HTTPException(status_code=500, detail=f"Error searching LinkedIn jobs: {str(e)}")

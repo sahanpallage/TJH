@@ -44,9 +44,9 @@ export default function Home() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeService, setActiveService] = useState<"jsearch" | "theirstack" | null>(
-    null
-  );
+  const [activeService, setActiveService] = useState<
+    "jsearch" | "theirstack" | "linkedin" | null
+  >(null);
 
   const downloadCsv = () => {
     if (!jobs.length) return;
@@ -107,6 +107,8 @@ export default function Home() {
         ? "jsearch"
         : activeService === "theirstack"
         ? "theirstack"
+        : activeService === "linkedin"
+        ? "linkedin"
         : "jobs";
 
     link.href = url;
@@ -130,7 +132,9 @@ export default function Home() {
     }));
   };
 
-  const handleSearch = async (service: "jsearch" | "theirstack") => {
+  const handleSearch = async (
+    service: "jsearch" | "theirstack" | "linkedin"
+  ) => {
     setLoading(true);
     setError(null);
     setActiveService(service);
@@ -179,7 +183,7 @@ export default function Home() {
               </span>
             </span>
             <span className="hidden sm:inline text-[11px] text-zinc-500">
-              JSearch · TheirStack · CSV export
+              JSearch · TheirStack · LinkedIn · CSV export
             </span>
           </div>
 
@@ -192,10 +196,10 @@ export default function Home() {
               </span>
             </h1>
             <p className="max-w-xl text-sm leading-relaxed text-zinc-300 sm:text-[15px]">
-              Combine <span className="font-medium text-zinc-100">JSearch</span> and{" "}
-              <span className="font-medium text-zinc-100">TheirStack</span> to surface
-              engineering roles by skills, salary band, and location—without the noisy
-              job board clutter.
+              Combine <span className="font-medium text-zinc-100">JSearch</span>{" "}
+              and <span className="font-medium text-zinc-100">TheirStack</span>{" "}
+              to surface engineering roles by skills, salary band, and
+              location—without the noisy job board clutter.
             </p>
           </div>
 
@@ -219,7 +223,9 @@ export default function Home() {
                 <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-400">
                   Scan
                 </p>
-                <p className="text-[13px]">Hit JSearch / TheirStack</p>
+                <p className="text-[13px]">
+                  Hit JSearch / TheirStack / LinkedIn
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -412,7 +418,10 @@ export default function Home() {
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,1)]" />
                 <span>
                   Searches run directly against{" "}
-                  <span className="font-medium text-zinc-200">your backend</span>.
+                  <span className="font-medium text-zinc-200">
+                    your backend
+                  </span>
+                  .
                 </span>
               </div>
 
@@ -452,6 +461,24 @@ export default function Home() {
                     </span>
                   )}
                 </button>
+
+                <button
+                  onClick={() => handleSearch("linkedin")}
+                  disabled={disabledSearch}
+                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-indigo-400/60 bg-slate-900/70 px-4 py-2.5 text-sm font-semibold text-zinc-50 shadow-[0_10px_30px_rgba(30,64,175,0.75)] transition hover:border-sky-400/70 hover:bg-slate-900/80 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {loading && activeService === "linkedin" ? (
+                    <span className="inline-flex items-center gap-2">
+                      <span className="h-3 w-3 animate-spin rounded-full border border-zinc-300 border-t-transparent" />
+                      <span>Scraping LinkedIn…</span>
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-2">
+                      <span className="h-1.5 w-1.5 rounded-full bg-indigo-400" />
+                      <span>Search with LinkedIn</span>
+                    </span>
+                  )}
+                </button>
               </div>
             </div>
           </div>
@@ -465,14 +492,17 @@ export default function Home() {
               Snapshot
             </p>
             <p className="text-balance text-sm text-zinc-100">
-              Design your search like a senior engineer: tighten your filters, compare
-              stacks, and export a focused shortlist you can actually work through.
+              Design your search like a senior engineer: tighten your filters,
+              compare stacks, and export a focused shortlist you can actually
+              work through.
             </p>
 
             <div className="mt-4 grid gap-3 text-[11px] text-zinc-300">
               <div className="flex items-start justify-between rounded-lg border border-zinc-700/80 bg-zinc-900/70 px-3 py-2.5">
                 <div>
-                  <p className="font-semibold text-zinc-100">Search confidence</p>
+                  <p className="font-semibold text-zinc-100">
+                    Search confidence
+                  </p>
                   <p className="mt-1 text-[11px] text-zinc-400">
                     Layer multiple filters to avoid generic listings.
                   </p>
@@ -484,7 +514,9 @@ export default function Home() {
 
               <div className="flex items-start justify-between rounded-lg border border-zinc-700/80 bg-zinc-900/70 px-3 py-2.5">
                 <div>
-                  <p className="font-semibold text-zinc-100">Two engines, one UI</p>
+                  <p className="font-semibold text-zinc-100">
+                    Two engines, one UI
+                  </p>
                   <p className="mt-1 text-[11px] text-zinc-400">
                     Compare JSearch and TheirStack results for the same role.
                   </p>
@@ -493,7 +525,9 @@ export default function Home() {
 
               <div className="flex items-start justify-between rounded-lg border border-zinc-700/80 bg-zinc-900/70 px-3 py-2.5">
                 <div>
-                  <p className="font-semibold text-zinc-100">CSV as source-of-truth</p>
+                  <p className="font-semibold text-zinc-100">
+                    CSV as source-of-truth
+                  </p>
                   <p className="mt-1 text-[11px] text-zinc-400">
                     Export once, track outreach in your own system.
                   </p>
@@ -506,7 +540,9 @@ export default function Home() {
             <div className="space-y-0.5">
               <p className="font-semibold text-zinc-100">
                 {jobs.length > 0
-                  ? `Currently viewing ${jobs.length} ${jobs.length === 1 ? "role" : "roles"}`
+                  ? `Currently viewing ${jobs.length} ${
+                      jobs.length === 1 ? "role" : "roles"
+                    }`
                   : "No active results yet"}
               </p>
               <p className="text-[10px] text-zinc-400">
@@ -542,13 +578,19 @@ export default function Home() {
                 Result set
               </p>
               <h2 className="mt-1 text-lg font-semibold text-zinc-50 sm:text-xl">
-                {jobs.length} {jobs.length === 1 ? "matching role" : "matching roles"}{" "}
-                found
+                {jobs.length}{" "}
+                {jobs.length === 1 ? "matching role" : "matching roles"} found
               </h2>
               <p className="mt-1 text-[11px] text-zinc-400">
                 Source:{" "}
                 <span className="font-medium text-zinc-200">
-                  {activeService === "jsearch" ? "JSearch (RapidAPI)" : "TheirStack"}
+                  {activeService === "jsearch"
+                    ? "JSearch (RapidAPI)"
+                    : activeService === "theirstack"
+                    ? "TheirStack"
+                    : activeService === "linkedin"
+                    ? "LinkedIn (JobSpy)"
+                    : "Unknown"}
                 </span>
               </p>
             </div>
@@ -632,7 +674,9 @@ export default function Home() {
               <div className="mt-4 flex items-center justify-between pt-3">
                 <span className="text-[10px] uppercase tracking-[0.18em] text-zinc-500">
                   {job.city || job.state || job.country
-                    ? [job.city, job.state, job.country].filter(Boolean).join(", ")
+                    ? [job.city, job.state, job.country]
+                        .filter(Boolean)
+                        .join(", ")
                     : "Location not specified"}
                 </span>
 
@@ -658,8 +702,9 @@ export default function Home() {
               Ready when you are
             </p>
             <p className="mt-2 max-w-md text-sm text-zinc-300">
-              Start by entering a role title above—then pull in live opportunities from
-              JSearch or TheirStack, and export the shortlist that fits your profile.
+              Start by entering a role title above—then pull in live
+              opportunities from JSearch or TheirStack, and export the shortlist
+              that fits your profile.
             </p>
           </div>
         )}

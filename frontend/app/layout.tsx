@@ -71,8 +71,8 @@ export default function RootLayout({
             <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 py-4 text-xs text-zinc-500 sm:flex-row sm:px-6 lg:px-8">
               <p>Built for technical job hunters.</p>
               <p className="text-[11px]">
-                Powered by <span className="font-medium text-zinc-300">JSearch</span>{" "}
-                & <span className="font-medium text-zinc-300">TheirStack</span>
+                Powered by{" "}
+                <span className="font-medium text-zinc-300">TJH </span>{" "}
               </p>
             </div>
           </footer>

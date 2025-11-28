@@ -32,6 +32,9 @@ dependencies = [
     "more-itertools==10.8.0",
     "typing-inspection==0.4.2",
 
+    # JobSpy for LinkedIn scraping
+    "python-jobspy==1.1.79",
+
     # Supabase client for caching / storage
     "supabase==2.24.0",
 ]
