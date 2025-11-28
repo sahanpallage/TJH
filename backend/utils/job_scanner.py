@@ -1,9 +1,11 @@
-import requests
-import sys
+import logging
 import re
-from pathlib import Path
-from typing import Any, List
+import sys
 from datetime import datetime
+from pathlib import Path
+from typing import Any, List, Optional
+
+import requests
 
 # Add parent directory to path for imports
 backend_dir = Path(__file__).parent.parent
@@ -11,6 +13,10 @@ sys.path.insert(0, str(backend_dir))
 
 from models.schemas import JobScannerInput, JobScannerOutput
 from settings import RAPID_API_KEY
+
+
+logger = logging.getLogger(__name__)
+REQUEST_TIMEOUT_SECONDS = 10
 
 def _parse_salary_range(salary_str: str) -> tuple[float, float] | None:
     """Parse salary range string to min and max values"""
@@ -67,13 +73,25 @@ def _calculate_job_match_score(input_data: JobScannerInput, job: dict[str, Any])
     if input_data.location_city or input_data.location_state:
         if input_data.job_type != "Remote":
             total_checks += 1
-            job_city = job.get('job_city', '').lower()
-            job_state = job.get('job_state', '').lower()
+            job_city = (job.get('job_city') or '').lower()
+            job_state = (job.get('job_state') or '').lower()
             input_city = (input_data.location_city or '').lower()
             input_state = (input_data.location_state or '').lower()
-            city_match = not input_city or input_city in job_city or job_city in input_city
-            state_match = not input_state or input_state in job_state or job_state in input_state
-            matches.append(city_match or state_match)
+
+            # Stricter matching: if city is provided, require city equality;
+            # if state is provided, require state equality.
+            city_match = True
+            state_match = True
+
+            if input_city:
+                city_match = input_city == job_city
+            if input_state:
+                state_match = input_state == job_state
+
+            if input_city and input_state:
+                matches.append(city_match and state_match)
+            else:
+                matches.append(city_match and state_match or city_match or state_match)
         # For remote jobs, location match is always True
         elif input_data.job_type == "Remote":
             total_checks += 1
@@ -82,8 +100,8 @@ def _calculate_job_match_score(input_data: JobScannerInput, job: dict[str, Any])
     # Check country
     if input_data.country:
         total_checks += 1
-        job_country = (job.get('job_country') or '').lower()
-        input_country = input_data.country.lower()
+        job_country = (job.get('job_country') or "").lower()
+        input_country = (input_data.country or "").lower()
         country_map = {
             "us": ["us", "usa", "united states"],
             "uk": ["uk", "gb", "united kingdom"],
@@ -174,16 +192,27 @@ def _check_job_matches_criteria(input_data: JobScannerInput, job: dict[str, Any]
     
     # Check location (skip for remote jobs as they can be done from anywhere)
     if input_data.job_type != "Remote" and (input_data.location_city or input_data.location_state):
-        job_city = job.get('job_city', '').lower()
-        job_state = job.get('job_state', '').lower()
+        job_city = (job.get('job_city') or '').lower()
+        job_state = (job.get('job_state') or '').lower()
         input_city = (input_data.location_city or '').lower()
         input_state = (input_data.location_state or '').lower()
-        
-        city_match = not input_city or input_city in job_city or job_city in input_city
-        state_match = not input_state or input_state in job_state or job_state in input_state
-        
-        if not (city_match or state_match):
-            return False
+
+        # Stricter matching: when city is set, require exact city match;
+        # when state is set, require exact state match.
+        city_match = True
+        state_match = True
+
+        if input_city:
+            city_match = input_city == job_city
+        if input_state:
+            state_match = input_state == job_state
+
+        if input_city and input_state:
+            if not (city_match and state_match):
+                return False
+        else:
+            if not (city_match or state_match):
+                return False
     
     # Check country
     if input_data.country:
@@ -251,13 +280,20 @@ def scan_jobs(input_data: JobScannerInput, num_pages: int = 1, strict_filter: bo
         "X-RapidAPI-Host": "jsearch.p.rapidapi.com"
     }
     
-    # Build query from job title and industry
+    # Build query from job title, industry, and location (as recommended by JSearch docs)
+    # e.g. "software engineer technology San Francisco CA US"
     query_parts = [input_data.job_title]
     if input_data.industry:
         query_parts.append(input_data.industry)
+    if input_data.location_city:
+        query_parts.append(input_data.location_city)
+    if input_data.location_state:
+        query_parts.append(input_data.location_state)
+    if input_data.country:
+        query_parts.append(input_data.country)
     query = " ".join(query_parts)
     
-    # Build location string
+    # Build location string (still sent as a separate hint parameter)
     location_parts = []
     if input_data.location_city:
         location_parts.append(input_data.location_city)
@@ -265,16 +301,11 @@ def scan_jobs(input_data: JobScannerInput, num_pages: int = 1, strict_filter: bo
         location_parts.append(input_data.location_state)
     location = ", ".join(location_parts) if location_parts else ""
     
-    # Map job_type to JSearch API format
-    # JSearch uses: remote_jobs_only parameter (true/false) and employment_types
-    remote_jobs_only = None
-    employment_types = None
-    
+    # Map job_type to JSearch format
+    # JSearch now uses `work_from_home` (boolean) to return only remote jobs.
+    work_from_home: Optional[str] = None
     if input_data.job_type == "Remote":
-        remote_jobs_only = "true"
-    elif input_data.job_type == "On site":
-        remote_jobs_only = "false"
-    # Hybrid doesn't have a direct parameter, so we'll leave it as None
+        work_from_home = "true"
     
     # Map date_posted to JSearch format (all, day, week, month)
     date_posted = "all"
@@ -288,13 +319,17 @@ def scan_jobs(input_data: JobScannerInput, num_pages: int = 1, strict_filter: bo
             date_posted = "month"
     
     all_jobs: List[JobScannerOutput] = []
-    
-    print(f"Searching for jobs with:")
-    print(f"  Query: {query}")
-    print(f"  Location: {location or 'Any'}")
-    print(f"  Country: {input_data.country}")
-    print(f"  Job Type: {input_data.job_type}")
-    print(f"  Date Posted: {date_posted}")
+
+    logger.info(
+        "Searching for jobs with JSearch",
+        extra={
+            "query": query,
+            "location": location or "Any",
+            "country": input_data.country,
+            "job_type": input_data.job_type,
+            "date_posted": date_posted,
+        },
+    )
     
     for page in range(1, num_pages + 1):
         params: dict[str, Any] = {
@@ -308,18 +343,26 @@ def scan_jobs(input_data: JobScannerInput, num_pages: int = 1, strict_filter: bo
             params["location"] = location
         if input_data.country:
             params["country"] = input_data.country.lower()
-        if remote_jobs_only is not None:
-            params["remote_jobs_only"] = remote_jobs_only
+        if work_from_home is not None:
+            params["work_from_home"] = work_from_home
         if date_posted:
             params["date_posted"] = date_posted
         
         try:
-            response = requests.get(url, headers=headers, params=params)
+            response = requests.get(
+                url,
+                headers=headers,
+                params=params,
+                timeout=REQUEST_TIMEOUT_SECONDS,
+            )
             if response.status_code == 200:
                 response_data = response.json()
-                jobs_data: List[dict[str, Any]] = response_data.get('data', [])
-                print(f"Page {page}: Found {len(jobs_data)} jobs")
-                
+                jobs_data: List[dict[str, Any]] = response_data.get("data", [])
+                logger.info(
+                    "JSearch page fetched",
+                    extra={"page": page, "jobs_on_page": len(jobs_data)},
+                )
+
                 for job in jobs_data:
                     # Apply filtering if enabled
                     if strict_filter:
@@ -379,11 +422,20 @@ def scan_jobs(input_data: JobScannerInput, num_pages: int = 1, strict_filter: bo
                     )
                     all_jobs.append(job_output)
             else:
-                print(f"Error fetching jobs on page {page}: {response.status_code}")
-                print(f"Response: {response.text}")
-        except Exception as e:
-            print(f"Exception occurred on page {page}: {str(e)}")
-    
-    print(f"Total jobs found: {len(all_jobs)}")
+                logger.warning(
+                    "Error fetching jobs from JSearch",
+                    extra={
+                        "page": page,
+                        "status_code": response.status_code,
+                        "response_text": response.text[:500],
+                    },
+                )
+        except requests.RequestException as e:
+            logger.error(
+                "Exception occurred while fetching jobs from JSearch",
+                extra={"page": page, "error": str(e)},
+            )
+
+    logger.info("Total jobs found", extra={"total": len(all_jobs)})
     return all_jobs
 

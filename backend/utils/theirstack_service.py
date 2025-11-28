@@ -3,13 +3,19 @@ TheirStack Job Search API Service.
 Separate from JSearch and LinkedIn APIs.
 Uses POST requests with Bearer token authentication.
 """
-import requests
+import logging
 import time
 from typing import Optional, List, Dict, Any
+
+import requests
+
 from settings import THEIRSTACK_API_KEY
+
+logger = logging.getLogger(__name__)
 
 # API Configuration
 THEIRSTACK_API_URL = "https://api.theirstack.com/v1/jobs/search"
+REQUEST_TIMEOUT_SECONDS = 15
 
 
 def search_jobs_theirstack(
@@ -95,10 +101,11 @@ def search_jobs_theirstack(
         response = requests.post(
             THEIRSTACK_API_URL,
             headers=headers,
-            json=json_body
+            json=json_body,
+            timeout=REQUEST_TIMEOUT_SECONDS,
         )
         response.raise_for_status()
-        
+
         data = response.json()
         
         # Handle TheirStack API response structure: {metadata: {...}, data: [...]}
@@ -109,14 +116,19 @@ def search_jobs_theirstack(
                 total = metadata.get("total", metadata.get("count", 0))
                 page = metadata.get("page", metadata.get("current_page", 0))
                 limit = metadata.get("limit", metadata.get("per_page", 0))
-                print(f"📊 Metadata: total={total}, page={page}, limit={limit}")
+                logger.info(
+                    "TheirStack metadata",
+                    extra={"total": total, "page": page, "limit": limit},
+                )
             
             # Extract jobs from data array
             if "data" in data:
                 jobs = data["data"]
                 if isinstance(jobs, list):
                     if len(jobs) == 0:
-                        print("⚠️  API returned empty data array (no jobs match criteria)")
+                        logger.info(
+                            "TheirStack returned empty data array (no jobs match criteria)"
+                        )
                     return jobs
                 elif isinstance(jobs, dict):
                     # If data is a dict, check for nested arrays
@@ -125,7 +137,10 @@ def search_jobs_theirstack(
                     elif "jobs" in jobs:
                         return jobs["jobs"]
                     else:
-                        print(f"⚠️  'data' is a dict with keys: {list(jobs.keys())}")
+                        logger.warning(
+                            "'data' in TheirStack response is a dict with unexpected keys",
+                            extra={"keys": list(jobs.keys())},
+                        )
                         return []
                 else:
                     return []
@@ -137,7 +152,10 @@ def search_jobs_theirstack(
             elif "items" in data:
                 return data["items"] if isinstance(data["items"], list) else []
             else:
-                print(f"⚠️  Unknown response structure. Top-level keys: {list(data.keys())}")
+                logger.warning(
+                    "Unknown TheirStack response structure",
+                    extra={"keys": list(data.keys())},
+                )
                 return []
         elif isinstance(data, list):
             # Direct list response
@@ -146,17 +164,17 @@ def search_jobs_theirstack(
             return []
             
     except requests.exceptions.HTTPError as e:
-        print(f"Error fetching jobs from TheirStack: {e}")
-        if hasattr(e, 'response') and e.response is not None:
-            print(f"Response status: {e.response.status_code}")
-            try:
-                error_body = e.response.json()
-                print(f"Error details: {error_body}")
-            except:
-                print(f"Response body: {e.response.text}")
+        status_code = e.response.status_code if getattr(e, "response", None) else None
+        logger.error(
+            "Error fetching jobs from TheirStack",
+            extra={
+                "error": str(e),
+                "status_code": status_code,
+            },
+        )
         raise
-    except Exception as e:
-        print(f"Unexpected error: {e}")
+    except requests.RequestException as e:
+        logger.error("Unexpected requests error calling TheirStack", extra={"error": str(e)})
         raise
 
 

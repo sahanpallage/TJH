@@ -19,14 +19,18 @@ Expected Supabase table (create this in your Supabase project):
 """
 
 import json
+import logging
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 from typing import Any, Dict, Optional, Tuple
 
 import requests
 
 from settings import SUPABASE_URL, SUPABASE_KEY
+
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -51,7 +55,7 @@ class JobCache:
   def __init__(self) -> None:
     if not SUPABASE_URL or not SUPABASE_KEY:
       # If Supabase is not configured, we behave like a no-op cache
-      print("⚠️  Supabase URL / KEY not set; JobCache will be disabled.")
+      logger.warning("Supabase URL / KEY not set; JobCache will be disabled.")
       self.enabled = False
     else:
       self.enabled = True
@@ -79,7 +83,8 @@ class JobCache:
       return None, False
 
     key = self._compute_key(service, payload)
-    cutoff = datetime.utcnow() - timedelta(minutes=ttl_minutes)
+    # Use timezone-aware UTC datetimes to avoid naive/aware comparison errors
+    cutoff = datetime.now(timezone.utc) - timedelta(minutes=ttl_minutes)
 
     params = {
       "select": "response,created_at",
@@ -90,11 +95,16 @@ class JobCache:
     }
 
     try:
-      resp = requests.get(self.base_url, headers=self.headers, params=params, timeout=5)
+      resp = requests.get(
+        self.base_url,
+        headers=self.headers,
+        params=params,
+        timeout=5,
+      )
       resp.raise_for_status()
       rows = resp.json()
-    except Exception as e:
-      print(f"⚠️  Cache get failed: {e}")
+    except requests.RequestException as e:
+      logger.warning("Cache get failed", extra={"error": str(e), "service": service})
       return None, False
 
     if not rows:
@@ -109,6 +119,8 @@ class JobCache:
 
     try:
       created_at = datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
+      if created_at.tzinfo is None:
+        created_at = created_at.replace(tzinfo=timezone.utc)
     except Exception:
       return None, False
 
@@ -145,7 +157,13 @@ class JobCache:
         timeout=5,
       )
       resp.raise_for_status()
-    except Exception as e:
-      print(f"⚠️  Cache set failed: {e}")
+    except requests.RequestException as e:
+      logger.warning(
+        "Cache set failed",
+        extra={
+          "error": str(e),
+          "service": service,
+        },
+      )
       return
 

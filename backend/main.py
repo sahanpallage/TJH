@@ -1,13 +1,20 @@
+import logging
+from typing import Optional, List
+
+import requests
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Optional, List
-import requests
+
 from settings import settings, RAPID_API_KEY
 from models.schemas import JobScannerInput, JobScannerOutput, JobScannerResponse
 from utils.job_scanner import scan_jobs
 from utils.theirstack_service import search_jobs_theirstack, normalize_theirstack_job
 from services.cache_service import JobCache
+
+
+logger = logging.getLogger(__name__)
+REQUEST_TIMEOUT_SECONDS = 10
 
 app = FastAPI(title="Job Search API", version="1.0.0")
 cache = JobCache()
@@ -70,9 +77,9 @@ async def search_jobs_jsearch(request: JobSearchRequest):
         cache_payload = request.model_dump()
         cached, hit = cache.get("jsearch", cache_payload, ttl_minutes=60)
         if hit and cached and cached.data.get("jobs"):
-            print("✅ JSearch cache hit")
+            logger.info("JSearch cache hit")
             return JobSearchResponse(**cached.data)
-        print("ℹ️  JSearch cache miss")
+        logger.info("JSearch cache miss")
 
         # Map frontend request to JobScannerInput
         # Map jobType: "Remote" -> "Remote", "On-site" -> "On site", "Hybrid" -> "Hybrid"
@@ -170,15 +177,32 @@ async def search_jobs_jsearch(request: JobSearchRequest):
                 params["date_posted"] = date_posted
             
             try:
-                response = requests.get(url, headers=headers, params=params)
+                response = requests.get(
+                    url,
+                    headers=headers,
+                    params=params,
+                    timeout=REQUEST_TIMEOUT_SECONDS,
+                )
                 if response.status_code == 200:
                     data = response.json()
-                    for job in data.get('data', []):
-                        apply_link = job.get('job_apply_link', '')
+                    for job in data.get("data", []):
+                        apply_link = job.get("job_apply_link", "")
                         if apply_link:
                             raw_jobs_map[apply_link] = job
-            except:
-                pass
+                else:
+                    logger.warning(
+                        "JSearch raw job fetch failed",
+                        extra={
+                            "page": page,
+                            "status_code": response.status_code,
+                            "response_text": response.text[:500],
+                        },
+                    )
+            except requests.RequestException as e:
+                logger.error(
+                    "Error fetching raw JSearch jobs",
+                    extra={"page": page, "error": str(e)},
+                )
         
         # Convert JobScannerOutput to JobResponse format with full details
         # Limit to 15 results for JSearch
@@ -220,8 +244,9 @@ async def search_jobs_jsearch(request: JobSearchRequest):
         cache.set("jsearch", cache_payload, response_obj.model_dump())
 
         return response_obj
-        
+
     except Exception as e:
+        logger.exception("Unhandled error in JSearch endpoint")
         raise HTTPException(status_code=500, detail=f"Error searching jobs: {str(e)}")
 
 @app.post("/api/jobs/theirstack", response_model=JobSearchResponse)
@@ -234,9 +259,9 @@ async def search_jobs_theirstack_endpoint(request: JobSearchRequest):
         cache_payload = request.model_dump()
         cached, hit = cache.get("theirstack", cache_payload, ttl_minutes=60)
         if hit and cached and cached.data.get("jobs"):
-            print("✅ TheirStack cache hit")
+            logger.info("TheirStack cache hit")
             return JobSearchResponse(**cached.data)
-        print("ℹ️  TheirStack cache miss")
+        logger.info("TheirStack cache miss")
 
         # Map frontend request to TheirStack parameters
         # Use job title only (don't combine with industry to avoid being too restrictive)
@@ -301,7 +326,7 @@ async def search_jobs_theirstack_endpoint(request: JobSearchRequest):
         
         # If no results and we have restrictive filters, try a fallback with fewer filters
         if not jobs_data and (job_location_pattern_or or remote is not None or min_salary_usd or max_salary_usd):
-            print("⚠️  No results with filters, trying fallback search with fewer restrictions...")
+            logger.info("No results with filters, trying fallback search with fewer restrictions")
             jobs_data = search_jobs_theirstack(
                 page=0,
                 limit=15,
@@ -364,9 +389,7 @@ async def search_jobs_theirstack_endpoint(request: JobSearchRequest):
         # Re-raise HTTP exceptions as-is
         raise
     except Exception as e:
-        import traceback
-        print(f"Error in TheirStack search: {str(e)}")
-        print(traceback.format_exc())
+        logger.exception("Unhandled error in TheirStack endpoint")
         raise HTTPException(status_code=500, detail=f"Error searching jobs: {str(e)}")
 
 def get_country_code(country_name: str) -> Optional[str]:

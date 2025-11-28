@@ -1,6 +1,37 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+This is a [Next.js](https://nextjs.org) frontend for the TJH job search tool.
 
-## Getting Started
+## Environment configuration
+
+The API routes in `app/api/jsearch/route.ts` and `app/api/theirstack/route.ts` forward requests to the FastAPI backend using the `BACKEND_URL` environment variable:
+
+```ts
+const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8000";
+```
+
+For **local development**:
+
+```bash
+# .env.local (do not commit)
+BACKEND_URL=http://localhost:8000
+```
+
+You can also copy `env.local.example` to `.env.local` as a starting point.
+
+On **Vercel (production)**, set `BACKEND_URL` in the project settings to point to your deployed backend, for example:
+
+```text
+https://your-backend-on-railway.app
+```
+
+Make sure the backend CORS configuration in `backend/settings.py` (via `CORS_ORIGINS`) includes your Vercel domain (for example `https://your-frontend-domain.vercel.app`).
+
+## Deployment (example: Vercel)
+
+1. Push this repo to GitHub and import it into **Vercel**.
+2. In Vercel project settings, add `BACKEND_URL` pointing to your deployed FastAPI backend.
+3. Trigger a deploy; Vercel will run `next build` and host the app at your chosen domain.
+
+## Getting Started (local)
 
 First, run the development server:
 
@@ -17,20 +48,3 @@ bun dev
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
