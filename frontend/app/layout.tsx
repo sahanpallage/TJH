@@ -47,7 +47,7 @@ export default function RootLayout({
                     TJH Job Hunter
                   </p>
                   <p className="text-[11px] text-zinc-400">
-                    JSearch & TheirStack, one sleek interface
+                    One sleek interface
                   </p>
                 </div>
               </div>

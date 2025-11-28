@@ -401,7 +401,7 @@ export default function Home() {
                   name="country"
                   value={formData.country}
                   onChange={handleInputChange}
-                  placeholder="US, UK, EU, remote-friendly..."
+                  placeholder="US, UK, EU ..."
                   className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-zinc-50 outline-none ring-0 transition focus:border-sky-400/70 focus:ring-2 focus:ring-sky-500/50"
                 />
               </div>
@@ -439,7 +439,9 @@ export default function Home() {
                   ) : (
                     <span className="inline-flex items-center gap-2">
                       <span className="h-1.5 w-1.5 rounded-full bg-slate-900" />
-                      <span>Search with JSearch</span>
+                      <span className="cursor-pointer">
+                        Search via Platform 1
+                      </span>
                     </span>
                   )}
                 </button>
@@ -457,7 +459,9 @@ export default function Home() {
                   ) : (
                     <span className="inline-flex items-center gap-2">
                       <span className="h-1.5 w-1.5 rounded-full bg-sky-400" />
-                      <span>Search with TheirStack</span>
+                      <span className="cursor-pointer">
+                        Search via Platform 2
+                      </span>
                     </span>
                   )}
                 </button>
@@ -470,12 +474,14 @@ export default function Home() {
                   {loading && activeService === "linkedin" ? (
                     <span className="inline-flex items-center gap-2">
                       <span className="h-3 w-3 animate-spin rounded-full border border-zinc-300 border-t-transparent" />
-                      <span>Scraping LinkedIn…</span>
+                      <span>Searching LinkedIn…</span>
                     </span>
                   ) : (
                     <span className="inline-flex items-center gap-2">
                       <span className="h-1.5 w-1.5 rounded-full bg-indigo-400" />
-                      <span>Search with LinkedIn</span>
+                      <span className="cursor-pointer">
+                        Search via LinkedIn
+                      </span>
                     </span>
                   )}
                 </button>
@@ -558,7 +564,7 @@ export default function Home() {
               className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/60 bg-emerald-500/15 px-3 py-1.5 text-[11px] font-semibold text-emerald-200 shadow-[0_10px_25px_rgba(6,78,59,0.7)] transition hover:bg-emerald-500/25 disabled:cursor-not-allowed disabled:border-zinc-600 disabled:bg-zinc-800 disabled:text-zinc-400"
             >
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
-              <span>Download CSV</span>
+              <span className="cursor-pointer">Download CSV</span>
             </button>
           </div>
         </aside>
