@@ -183,7 +183,7 @@ export default function Home() {
               </span>
             </span>
             <span className="hidden sm:inline text-[11px] text-zinc-500">
-              JSearch · TheirStack · LinkedIn · CSV export
+              CSV export
             </span>
           </div>
 
@@ -196,9 +196,7 @@ export default function Home() {
               </span>
             </h1>
             <p className="max-w-xl text-sm leading-relaxed text-zinc-300 sm:text-[15px]">
-              Combine <span className="font-medium text-zinc-100">JSearch</span>{" "}
-              and <span className="font-medium text-zinc-100">TheirStack</span>{" "}
-              to surface engineering roles by skills, salary band, and
+              Surface engineering roles by skills, salary band, and
               location—without the noisy job board clutter.
             </p>
           </div>
@@ -429,16 +427,16 @@ export default function Home() {
                 <button
                   onClick={() => handleSearch("jsearch")}
                   disabled={disabledSearch}
-                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-sky-500 via-cyan-400 to-emerald-400 px-4 py-2.5 text-sm font-semibold text-slate-950 shadow-[0_10px_35px_rgba(8,47,73,0.75)] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-sky-400/60 bg-slate-900/60 px-4 py-2.5 text-sm font-semibold text-zinc-50 shadow-[0_10px_35px_rgba(56,189,248,0.85)] transition hover:border-sky-400/80 hover:bg-slate-900/70 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {loading && activeService === "jsearch" ? (
                     <span className="inline-flex items-center gap-2">
-                      <span className="h-3 w-3 animate-spin rounded-full border border-slate-900 border-t-transparent" />
-                      <span>Scanning via JSearch…</span>
+                      <span className="h-3 w-3 animate-spin rounded-full border border-slate-300 border-t-transparent" />
+                      <span>Scanning globally…</span>
                     </span>
                   ) : (
                     <span className="inline-flex items-center gap-2">
-                      <span className="h-1.5 w-1.5 rounded-full bg-slate-900" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-sky-400 shadow-[0_0_14px_rgba(56,189,248,1)]" />
                       <span className="cursor-pointer">
                         Search via Platform 1
                       </span>
@@ -449,16 +447,16 @@ export default function Home() {
                 <button
                   onClick={() => handleSearch("theirstack")}
                   disabled={disabledSearch}
-                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-sky-400/50 bg-slate-900/60 px-4 py-2.5 text-sm font-semibold text-zinc-50 shadow-[0_10px_30px_rgba(15,23,42,0.9)] transition hover:border-emerald-400/60 hover:bg-slate-900/70 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-emerald-400/60 bg-slate-900/60 px-4 py-2.5 text-sm font-semibold text-zinc-50 shadow-[0_10px_30px_rgba(6,95,70,0.85)] transition hover:border-emerald-400/80 hover:bg-slate-900/70 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {loading && activeService === "theirstack" ? (
                     <span className="inline-flex items-center gap-2">
                       <span className="h-3 w-3 animate-spin rounded-full border border-zinc-400 border-t-transparent" />
-                      <span>Scanning via TheirStack…</span>
+                      <span>Scanning globally…</span>
                     </span>
                   ) : (
                     <span className="inline-flex items-center gap-2">
-                      <span className="h-1.5 w-1.5 rounded-full bg-sky-400" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
                       <span className="cursor-pointer">
                         Search via Platform 2
                       </span>
@@ -474,7 +472,7 @@ export default function Home() {
                   {loading && activeService === "linkedin" ? (
                     <span className="inline-flex items-center gap-2">
                       <span className="h-3 w-3 animate-spin rounded-full border border-zinc-300 border-t-transparent" />
-                      <span>Searching LinkedIn…</span>
+                      <span>Scanning LinkedIn…</span>
                     </span>
                   ) : (
                     <span className="inline-flex items-center gap-2">
@@ -708,9 +706,9 @@ export default function Home() {
               Ready when you are
             </p>
             <p className="mt-2 max-w-md text-sm text-zinc-300">
-              Start by entering a role title above—then pull in live
-              opportunities from JSearch or TheirStack, and export the shortlist
-              that fits your profile.
+              Start by entering a role title above, then pull in live
+              opportunities from the platforms and export the shortlist that
+              fits your profile.
             </p>
           </div>
         )}
