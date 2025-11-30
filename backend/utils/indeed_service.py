@@ -5,6 +5,8 @@ Uses Apify's Indeed scraper actor which handles Cloudflare and other protections
 """
 import logging
 import time
+import re
+from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
 import requests
 from bs4 import BeautifulSoup
@@ -13,6 +15,76 @@ from settings import APIFY_API_KEY, APIFY_ACTOR_ID
 logger = logging.getLogger(__name__)
 
 # Apify Indeed Scraper Actor ID (from settings)
+
+
+def _parse_indeed_date(date_str: Optional[str]) -> str:
+    """
+    Parse Indeed's date format from Apify scraper.
+    Handles both relative dates (e.g., "2 days ago", "3 weeks ago") and absolute dates.
+    
+    Args:
+        date_str: Date string from Apify (e.g., "2 days ago", "2024-01-15", etc.)
+    
+    Returns:
+        Normalized date string in ISO format (YYYY-MM-DD) or relative format if parsing fails
+    """
+    if not date_str:
+        return ""
+    
+    date_str = str(date_str).strip()
+    
+    # Try to parse ISO date format first
+    try:
+        # Try ISO format: 2024-01-15 or 2024-01-15T10:30:00
+        if re.match(r'^\d{4}-\d{2}-\d{2}', date_str):
+            dt = datetime.fromisoformat(date_str.replace('Z', '+00:00').split('T')[0])
+            return dt.strftime('%Y-%m-%d')
+    except (ValueError, AttributeError):
+        pass
+    
+    # Parse relative dates like "2 days ago", "3 weeks ago", "1 month ago"
+    now = datetime.now()
+    
+    # Pattern: "X days ago", "X day ago"
+    day_match = re.search(r'(\d+)\s+day', date_str.lower())
+    if day_match:
+        days = int(day_match.group(1))
+        date_obj = now - timedelta(days=days)
+        return date_obj.strftime('%Y-%m-%d')
+    
+    # Pattern: "X weeks ago", "X week ago"
+    week_match = re.search(r'(\d+)\s+week', date_str.lower())
+    if week_match:
+        weeks = int(week_match.group(1))
+        date_obj = now - timedelta(weeks=weeks)
+        return date_obj.strftime('%Y-%m-%d')
+    
+    # Pattern: "X months ago", "X month ago"
+    month_match = re.search(r'(\d+)\s+month', date_str.lower())
+    if month_match:
+        months = int(month_match.group(1))
+        # Approximate: 30 days per month
+        date_obj = now - timedelta(days=months * 30)
+        return date_obj.strftime('%Y-%m-%d')
+    
+    # Pattern: "X hours ago", "X hour ago"
+    hour_match = re.search(r'(\d+)\s+hour', date_str.lower())
+    if hour_match:
+        hours = int(hour_match.group(1))
+        date_obj = now - timedelta(hours=hours)
+        return date_obj.strftime('%Y-%m-%d')
+    
+    # Pattern: "Just now", "Today", "Yesterday"
+    if "just now" in date_str.lower() or "today" in date_str.lower():
+        return now.strftime('%Y-%m-%d')
+    
+    if "yesterday" in date_str.lower():
+        date_obj = now - timedelta(days=1)
+        return date_obj.strftime('%Y-%m-%d')
+    
+    # If we can't parse it, return the original string
+    logger.debug(f"Could not parse date: {date_str}, returning as-is")
+    return date_str
 
 
 def search_indeed_jobs(
@@ -175,6 +247,10 @@ def search_indeed_jobs(
             if "hybrid" in job_type_lower:
                 remote = True
         
+        # Parse and normalize the date
+        raw_date = job.get("postedAt") or ""
+        normalized_date = _parse_indeed_date(raw_date)
+        
         cleaned_jobs.append({
             "title": job.get("positionName") or "",
             "company": job.get("company") or "",
@@ -183,7 +259,7 @@ def search_indeed_jobs(
             "state": state,
             "country": country,
             "url": job.get("externalApplyLink") or job.get("url") or "",
-            "date_posted": job.get("postedAt") or "",
+            "date_posted": normalized_date,
             "description": desc_text[:500] if desc_text else "",  # Limit description length
             "employment_type": job_type_str,
             "remote": remote,

@@ -280,15 +280,15 @@ async def search_jobs_indeed_endpoint(request: JobSearchRequest):
             search_indeed_jobs,
             request.jobTitle,
             location,
-            50  # max_results - increased to get more jobs
+            30  # max_results - capped at 30
         )
         
         # Normalize and convert to response format
         job_responses = []
         seen_ids = set()  # Track IDs to ensure uniqueness
         
-        # Process all jobs returned by Apify (up to 50 to avoid overwhelming the UI)
-        for idx, job in enumerate(jobs_data[:50]):
+        # Process all jobs returned by Apify (capped at 30)
+        for idx, job in enumerate(jobs_data[:30]):
             normalized = normalize_indeed_job(job)
             
             # Build location string
@@ -427,12 +427,12 @@ async def search_jobs_linkedin_endpoint(request: JobSearchRequest):
             city=request.city or "",
             country=request.country or "",
             date_posted=request.datePosted or "",
-            results_wanted=20,
+            results_wanted=30,
         )
 
-        # Limit to 20 for LinkedIn
+        # Limit to 30 for LinkedIn
         job_responses: List[JobResponse] = []
-        for idx, job in enumerate(jobs_data[:20]):
+        for idx, job in enumerate(jobs_data[:30]):
             job_responses.append(
                 JobResponse(
                     id=str(job.get("id", f"linkedin_{idx}")),
