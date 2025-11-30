@@ -2,7 +2,7 @@ This is a [Next.js](https://nextjs.org) frontend for the TJH job search tool.
 
 ## Environment configuration
 
-The API routes in `app/api/jsearch/route.ts` and `app/api/theirstack/route.ts` forward requests to the FastAPI backend using the `BACKEND_URL` environment variable:
+The API routes in `app/api/jsearch/route.ts` and `app/api/indeed/route.ts` forward requests to the FastAPI backend using the `BACKEND_URL` environment variable:
 
 ```ts
 const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8000";

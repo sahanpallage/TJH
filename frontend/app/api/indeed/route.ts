@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     // Forward the request to the backend
-    const response = await fetch(`${BACKEND_URL}/api/jobs/theirstack`, {
+    const response = await fetch(`${BACKEND_URL}/api/jobs/indeed`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     const data = await response.json();
     return NextResponse.json(data);
   } catch (error: any) {
-    console.error("TheirStack API error:", error);
+    console.error("Indeed API error:", error);
     return NextResponse.json(
       { error: "Failed to search jobs", details: error.message },
       { status: 500 }

@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from typing import Optional, List
 
@@ -9,10 +10,9 @@ from pydantic import BaseModel
 from settings import settings, RAPID_API_KEY
 from models.schemas import JobScannerInput, JobScannerOutput, JobScannerResponse
 from utils.job_scanner import scan_jobs
-from utils.theirstack_service import search_jobs_theirstack, normalize_theirstack_job
+from utils.indeed_service import search_indeed_jobs, normalize_indeed_job
 from utils.linkedin_jobspy_service import search_linkedin_jobs
 from services.cache_service import JobCache
-
 
 logger = logging.getLogger(__name__)
 REQUEST_TIMEOUT_SECONDS = 10
@@ -250,122 +250,83 @@ async def search_jobs_jsearch(request: JobSearchRequest):
         logger.exception("Unhandled error in JSearch endpoint")
         raise HTTPException(status_code=500, detail=f"Error searching jobs: {str(e)}")
 
-@app.post("/api/jobs/theirstack", response_model=JobSearchResponse)
-async def search_jobs_theirstack_endpoint(request: JobSearchRequest):
+@app.post("/api/jobs/indeed", response_model=JobSearchResponse)
+async def search_jobs_indeed_endpoint(request: JobSearchRequest):
     """
-    Search for jobs using TheirStack API.
+    Search for jobs using Indeed scraper (Playwright).
     """
     try:
         # ---------- CACHE CHECK ----------
         cache_payload = request.model_dump()
-        cached, hit = cache.get("theirstack", cache_payload, ttl_minutes=60)
+        cached, hit = cache.get("indeed", cache_payload, ttl_minutes=60)
         if hit and cached and cached.data.get("jobs"):
-            logger.info("TheirStack cache hit")
+            logger.info("Indeed cache hit")
             return JobSearchResponse(**cached.data)
-        logger.info("TheirStack cache miss")
+        logger.info("Indeed cache miss")
 
-        # Map frontend request to TheirStack parameters
-        # Use job title only (don't combine with industry to avoid being too restrictive)
-        job_title_or = [request.jobTitle] if request.jobTitle else None
-        
-        # Map country
-        job_country_code_or = None
-        if request.country:
-            # Convert country name to code if needed
-            country_code = request.country.upper() if len(request.country) == 2 else get_country_code(request.country)
-            if country_code:
-                job_country_code_or = [country_code]
-        
-        # Map location - be less restrictive, don't require exact city match
-        job_location_pattern_or = None
+        # Build location string from city and country
+        location_parts = []
         if request.city:
-            # Use city as a pattern, not exact match
-            job_location_pattern_or = [request.city]
+            location_parts.append(request.city)
+        if request.country:
+            location_parts.append(request.country)
+        location = ", ".join(location_parts) if location_parts else (request.country or "")
         
-        # Map job type to remote
-        remote = None
-        if request.jobType == "Remote":
-            remote = True
-        elif request.jobType == "On-site":
-            remote = False
-        # For Hybrid, don't set remote filter (let API return both)
-        
-        # Map date posted
-        posted_at_max_age_days = None
-        if request.datePosted:
-            date_lower = request.datePosted.lower()
-            if "day" in date_lower or "today" in date_lower:
-                posted_at_max_age_days = 1
-            elif "week" in date_lower:
-                posted_at_max_age_days = 7
-            elif "month" in date_lower:
-                posted_at_max_age_days = 30
-        
-        # Map salary - be less restrictive, only set if both min and max provided
-        min_salary_usd = None
-        max_salary_usd = None
-        # Don't set salary filters if only one is provided (too restrictive)
-        if request.salaryMin and request.salaryMax:
-            try:
-                min_salary_usd = int(request.salaryMin)
-                max_salary_usd = int(request.salaryMax)
-            except:
-                pass
-        
-        # Call TheirStack API with primary parameters
-        jobs_data = search_jobs_theirstack(
-            page=0,
-            limit=15,
-            job_country_code_or=job_country_code_or,
-            posted_at_max_age_days=posted_at_max_age_days,
-            job_title_or=job_title_or,
-            job_location_pattern_or=job_location_pattern_or,
-            remote=remote,
-            min_salary_usd=min_salary_usd,
-            max_salary_usd=max_salary_usd
+        # Call Indeed scraper (Apify API) - run in executor since it's sync
+        logger.info(f"Searching Indeed for '{request.jobTitle}' in '{location}'")
+        loop = asyncio.get_event_loop()
+        jobs_data = await loop.run_in_executor(
+            None,
+            search_indeed_jobs,
+            request.jobTitle,
+            location,
+            50  # max_results - increased to get more jobs
         )
         
-        # If no results and we have restrictive filters, try a fallback with fewer filters
-        if not jobs_data and (job_location_pattern_or or remote is not None or min_salary_usd or max_salary_usd):
-            logger.info("No results with filters, trying fallback search with fewer restrictions")
-            jobs_data = search_jobs_theirstack(
-                page=0,
-                limit=15,
-                job_country_code_or=job_country_code_or,
-                posted_at_max_age_days=posted_at_max_age_days,
-                job_title_or=job_title_or,
-                job_location_pattern_or=None,  # Remove location filter
-                remote=None,  # Remove remote filter
-                min_salary_usd=None,  # Remove salary filters
-                max_salary_usd=None
-            )
-        
         # Normalize and convert to response format
-        # Limit to 15 results for TheirStack
         job_responses = []
-        for idx, job in enumerate(jobs_data[:15]):
-            normalized = normalize_theirstack_job(job)
+        seen_ids = set()  # Track IDs to ensure uniqueness
+        
+        # Process all jobs returned by Apify (up to 50 to avoid overwhelming the UI)
+        for idx, job in enumerate(jobs_data[:50]):
+            normalized = normalize_indeed_job(job)
             
             # Build location string
-            location_parts = []
+            loc_parts = []
             if normalized.get("city"):
-                location_parts.append(normalized["city"])
+                loc_parts.append(normalized["city"])
             if normalized.get("state"):
-                location_parts.append(normalized["state"])
-            location = ", ".join(location_parts) if location_parts else normalized.get("location", "")
+                loc_parts.append(normalized["state"])
+            if normalized.get("country"):
+                loc_parts.append(normalized["country"])
+            location_str = ", ".join(loc_parts) if loc_parts else normalized.get("location", "")
             
-            # Handle remote field - it might be a string or boolean
+            # Handle remote field
             remote_value = normalized.get("remote", False)
             if isinstance(remote_value, str):
                 remote_value = remote_value.lower() in ["true", "yes", "remote", "1"]
             elif not isinstance(remote_value, bool):
                 remote_value = False
             
+            # Generate unique ID, ensuring no duplicates
+            base_id = normalized.get("job_id", "")
+            if not base_id:
+                base_id = f"indeed_{idx}"
+            
+            # If ID already seen, append index to make it unique
+            job_id = base_id
+            counter = 0
+            while job_id in seen_ids:
+                counter += 1
+                job_id = f"{base_id}_{counter}"
+            
+            seen_ids.add(job_id)
+            
             job_responses.append(JobResponse(
-                id=str(normalized.get("job_id", f"theirstack_{idx}")),
+                id=f"indeed_{job_id}",  # Prefix with "indeed_" for clarity
                 title=normalized.get("title", ""),
                 company=normalized.get("company", ""),
-                location=location,
+                location=location_str,
                 city=normalized.get("city", ""),
                 state=normalized.get("state", ""),
                 country=normalized.get("country", ""),
@@ -373,25 +334,43 @@ async def search_jobs_theirstack_endpoint(request: JobSearchRequest):
                 type=normalized.get("employment_type", ""),
                 remote=remote_value,
                 posted=normalized.get("date_posted", ""),
-                description=normalized.get("description", ""),
+                description=normalized.get("description", "")[:500] if normalized.get("description") else "",
                 applyLink=normalized.get("link", "")
             ))
         
-        if len(job_responses) == 0:
-            # Return a helpful error message
-            raise HTTPException(
-                status_code=404,
-                detail="No jobs found matching the criteria. Try adjusting your search parameters (e.g., remove location or salary filters)."
-            )
+        response_obj = JobSearchResponse(jobs=job_responses, total=len(job_responses))
+
+        # ---------- CACHE STORE ----------
+        cache.set("indeed", cache_payload, response_obj.model_dump())
         
-        return JobSearchResponse(jobs=job_responses, total=len(job_responses))
+        if len(job_responses) == 0:
+            logger.warning(f"No jobs found for search: '{request.jobTitle}' in '{location}'")
+            # Provide more helpful error message
+            if len(jobs_data) == 0:
+                raise HTTPException(
+                    status_code=404,
+                    detail="No jobs found on Indeed. The search might not have returned any results, or the page structure may have changed. Try adjusting your search parameters."
+                )
+            else:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Found {len(jobs_data)} jobs but none could be processed. This might be due to page structure changes on Indeed."
+                )
+        
+        return response_obj
         
     except HTTPException:
         # Re-raise HTTP exceptions as-is
         raise
     except Exception as e:
-        logger.exception("Unhandled error in TheirStack endpoint")
-        raise HTTPException(status_code=500, detail=f"Error searching jobs: {str(e)}")
+        error_msg = str(e) if str(e) else repr(e)
+        logger.exception(f"Unhandled error in Indeed endpoint: {error_msg}")
+        # Provide more helpful error message
+        if "Playwright browsers are not installed" in error_msg:
+            detail_msg = "Playwright browsers are not installed. Please run 'playwright install chromium' in the backend directory."
+        else:
+            detail_msg = f"Error searching Indeed jobs: {error_msg}"
+        raise HTTPException(status_code=500, detail=detail_msg)
 
 def get_country_code(country_name: str) -> Optional[str]:
     """Convert country name to country code"""
@@ -431,7 +410,7 @@ def get_country_code(country_name: str) -> Optional[str]:
 async def search_jobs_linkedin_endpoint(request: JobSearchRequest):
     """
     Search for jobs directly on LinkedIn using the JobSpy scraper.
-    Kept separate from JSearch and TheirStack, but returns the same shape.
+    Kept separate from JSearch and Indeed, but returns the same shape.
     """
     try:
         # ---------- CACHE CHECK ----------

@@ -2,7 +2,7 @@
 Simple cache service for job search results backed by Supabase Postgres.
 
 We use Supabase's REST API to store and retrieve cached responses for
-repeated queries so we don't keep hitting external APIs (JSearch / TheirStack)
+repeated queries so we don't keep hitting external APIs (JSearch / Indeed / LinkedIn)
 with identical parameters.
 
 Expected Supabase table (create this in your Supabase project):
@@ -46,7 +46,7 @@ class JobCache:
   Very small, focused cache for job search responses using Supabase.
 
   Table schema (job_cache):
-    service     text   (e.g., 'jsearch', 'theirstack')
+    service     text   (e.g., 'jsearch', 'indeed', 'linkedin')
     cache_key   text   (hash of normalized request)
     response    jsonb  (JobSearchResponse payload)
     created_at  timestamptz
