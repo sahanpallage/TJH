@@ -38,6 +38,9 @@ dependencies = [
     # BeautifulSoup for HTML parsing (Indeed scraper)
     "beautifulsoup4>=4.12.0",
 
+    # Rate limiting
+    "slowapi>=0.1.9",
+
     # Supabase client for caching / storage
     "supabase==2.24.0",
 ]

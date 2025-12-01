@@ -41,6 +41,9 @@ class CacheResult:
   created_at: datetime
 
 
+# Default cache TTL: 7 days (in minutes)
+CACHE_TTL_MINUTES = 60 * 24 * 7
+
 class JobCache:
   """
   Very small, focused cache for job search responses using Supabase.
@@ -74,7 +77,7 @@ class JobCache:
     return sha256(f"{service}:{normalized}".encode("utf-8")).hexdigest()
 
   def get(
-    self, service: str, payload: Dict[str, Any], ttl_minutes: int = 60
+    self, service: str, payload: Dict[str, Any], ttl_minutes: int = CACHE_TTL_MINUTES
   ) -> Tuple[Optional[CacheResult], bool]:
     """
     Return (CacheResult or None, hit:boolean).
@@ -99,7 +102,7 @@ class JobCache:
         self.base_url,
         headers=self.headers,
         params=params,
-        timeout=5,
+        timeout=5,  # Add timeout to prevent hanging
       )
       resp.raise_for_status()
       rows = resp.json()

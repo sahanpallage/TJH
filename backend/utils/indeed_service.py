@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
 import requests
 from bs4 import BeautifulSoup
-from settings import APIFY_API_KEY, APIFY_ACTOR_ID
+from settings import APIFY_API_KEY, APIFY_ACTOR_ID, settings
 
 logger = logging.getLogger(__name__)
 
@@ -197,7 +197,8 @@ def search_indeed_jobs(
     }
     
     try:
-        response = requests.post(run_url, json=payload, timeout=30)
+        timeout = getattr(settings, 'INDEED_TIMEOUT', 120)
+        response = requests.post(run_url, json=payload, timeout=min(30, timeout))
         response.raise_for_status()
         run_data = response.json()
         run_id = run_data["data"]["id"]
@@ -221,7 +222,7 @@ def search_indeed_jobs(
     status_url = f"https://api.apify.com/v2/acts/{actor}/runs/{run_id}?token={APIFY_API_KEY}"
     
     logger.info("Waiting for Apify scraper to complete...")
-    max_wait_time = 120  # Maximum 2 minutes
+    max_wait_time = getattr(settings, 'INDEED_TIMEOUT', 120)  # Use configured timeout
     start_time = time.time()
     
     while True:
@@ -231,7 +232,7 @@ def search_indeed_jobs(
             raise TimeoutError("Apify scraper took too long to complete")
         
         try:
-            status_response = requests.get(status_url, timeout=10)
+            status_response = requests.get(status_url, timeout=10)  # Status check is quick
             status_response.raise_for_status()
             status_data = status_response.json()
             status = status_data["data"]["status"]
@@ -260,7 +261,8 @@ def search_indeed_jobs(
     dataset_url = f"https://api.apify.com/v2/datasets/{dataset_id}/items?format=json&token={APIFY_API_KEY}"
     
     try:
-        data_response = requests.get(dataset_url, timeout=30)
+        timeout = getattr(settings, 'INDEED_TIMEOUT', 120)
+        data_response = requests.get(dataset_url, timeout=min(30, timeout))
         data_response.raise_for_status()
         jobs_data = data_response.json()
         
