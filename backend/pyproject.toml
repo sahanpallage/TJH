@@ -1,22 +1,52 @@
 [project]
 name = "backend"
 version = "0.1.0"
-description = "Add your description here"
+description = "FastAPI backend for the TJH job search tool"
 readme = "README.md"
-requires-python = ">=3.13"
+# Use a stable, widely supported Python version in production.
+# Python 3.11 works well on most hosts (Railway/Render/Fly/GitHub Actions, etc.).
+requires-python = ">=3.11,<3.13"
 dependencies = [
-    "apify-client>=2.3.0",
-    "fastapi>=0.122.0",
-    "openpyxl>=3.1.5",
-    "pandas>=2.3.3",
-    "pydantic-settings>=2.12.0",
-    "pytz>=2025.2",
-    "requests>=2.32.5",
-    "tabulate>=0.9.0",
-    "uvicorn>=0.38.0",
+    # Core web stack
+    "fastapi==0.122.0",
+    "uvicorn[standard]==0.38.0",
+    "requests==2.32.5",
+
+    # Settings and validation
+    "pydantic==2.12.5",
+    "pydantic-core==2.41.5",
+    "pydantic-settings==2.12.0",
+    "python-dotenv==1.2.1",
+    "typing-extensions==4.15.0",
+
+    # Data / utilities – kept aligned with requirements.txt
+    "pandas==2.3.3",
+    "numpy==2.3.5",
+    "openpyxl==3.1.5",
+    "pytz==2025.2",
+    "tabulate==0.9.0",
+    "apify-client==2.3.0",
+    "apify-shared==2.1.0",
+    "annotated-doc==0.0.4",
+    "annotated-types==0.7.0",
+    "more-itertools==10.8.0",
+    "typing-inspection==0.4.2",
+
+    # JobSpy for LinkedIn scraping
+    "python-jobspy==1.1.79",
+
+    # BeautifulSoup for HTML parsing (Indeed scraper)
+    "beautifulsoup4>=4.12.0",
+
+    # Rate limiting
+    "slowapi>=0.1.9",
+
+    # Supabase client for caching / storage
+    "supabase==2.24.0",
 ]
 
 [dependency-groups]
 dev = [
     "pyflakes>=3.4.0",
+    "pytest>=8.3.0",
 ]

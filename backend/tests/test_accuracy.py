@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from tabulate import tabulate
 
 # Add backend directory to path
-backend_dir = Path(__file__).parent
+backend_dir = Path(__file__).parent.parent
 sys.path.insert(0, str(backend_dir))
 
 from models.schemas import JobScannerInput, JobScannerOutput
@@ -249,25 +249,12 @@ def calculate_accuracy(input_data: JobScannerInput, jobs: List[JobScannerOutput]
         "detailed_results": detailed_results
     }
 
-def test_accuracy():
-    """Run accuracy test for job scanner"""
-    
+def run_single_test(test_input: JobScannerInput, test_name: str, use_strict_filter: bool = True, min_threshold: float = 80.0):
+    """Run a single accuracy test"""
     print("=" * 80)
-    print("JOB SCANNER ACCURACY TEST")
+    print(f"TEST: {test_name}")
     print("=" * 80)
     print()
-    
-    # Create test input
-    test_input = JobScannerInput(
-        job_title="Software Engineer",
-        industry="Technology",
-        salary_range="$80,000 - $100,000",
-        job_type="Remote",
-        location_city="San Francisco",
-        location_state="CA",
-        country="US",
-        date_posted="week"
-    )
     
     print("INPUT CRITERIA:")
     print(f"  Job Title: {test_input.job_title}")
@@ -281,25 +268,19 @@ def test_accuracy():
     print("-" * 80)
     print()
     
-    # Check API key
-    try:
-        from settings import RAPID_API_KEY
-        if not RAPID_API_KEY:
-            print("ERROR: RAPID_API_KEY is not set in settings.py")
-            return
-    except Exception as e:
-        print(f"ERROR loading settings: {str(e)}")
-        return
-    
     # Scan for jobs
     try:
         print("Scanning for jobs...")
-        print("Using filtering with 80% minimum match threshold...")
-        jobs = scan_jobs(test_input, num_pages=2, strict_filter=True, min_match_threshold=80.0)  # 80% threshold
+        if use_strict_filter:
+            print(f"Using filtering with {min_threshold}% minimum match threshold...")
+            jobs = scan_jobs(test_input, num_pages=2, strict_filter=True, min_match_threshold=min_threshold)
+        else:
+            print("No filtering - showing raw API results...")
+            jobs = scan_jobs(test_input, num_pages=2, strict_filter=False)
         
         if not jobs:
             print("No jobs found. Cannot calculate accuracy.")
-            return
+            return None
         
         print(f"Found {len(jobs)} jobs. Calculating accuracy...")
         print()
@@ -328,14 +309,14 @@ def test_accuracy():
         print(f"OVERALL ACCURACY: {overall:.2f}%")
         print()
         
-        # Detailed results table
+        # Detailed results table (show first 10)
         print("=" * 80)
-        print("DETAILED JOB MATCHES")
+        print("DETAILED JOB MATCHES (First 10)")
         print("=" * 80)
         print()
         
         detailed_data = []
-        for result in accuracy_results["detailed_results"]:
+        for result in accuracy_results["detailed_results"][:10]:
             matches = result["matches"]
             match_indicators = [
                 "✓" if matches["job_title"] else "✗",
@@ -373,12 +354,145 @@ def test_accuracy():
         perfect_matches = sum(1 for r in accuracy_results["detailed_results"] if r["match_score"] == 100.0)
         print(f"Perfect Matches (100%): {perfect_matches}/{accuracy_results['total_jobs']}")
         print(f"High Quality Matches (≥80%): {sum(1 for r in accuracy_results['detailed_results'] if r['match_score'] >= 80)}/{accuracy_results['total_jobs']}")
+        print(f"Medium Quality Matches (≥50%): {sum(1 for r in accuracy_results['detailed_results'] if r['match_score'] >= 50)}/{accuracy_results['total_jobs']}")
         print("=" * 80)
+        print()
+        print()
+        
+        return accuracy_results
         
     except Exception as e:
         print(f"ERROR: {str(e)}")
         import traceback
         traceback.print_exc()
+        return None
+
+def test_accuracy():
+    """Run comprehensive accuracy tests for job scanner"""
+    
+    print("=" * 80)
+    print("JOB SCANNER ACCURACY TEST - RAPIDAPI JSEARCH")
+    print("=" * 80)
+    print()
+    
+    # Check API key
+    try:
+        from settings import RAPID_API_KEY
+        if not RAPID_API_KEY:
+            print("ERROR: RAPID_API_KEY is not set in settings.py")
+            return
+        print(f"✓ API Key loaded: {RAPID_API_KEY[:10]}..." if len(RAPID_API_KEY) > 10 else "✓ API Key loaded")
+        print()
+    except Exception as e:
+        print(f"ERROR loading settings: {str(e)}")
+        return
+    
+    all_results = []
+    
+    # Test 1: Software Engineer - Remote - Specific location
+    test1 = JobScannerInput(
+        job_title="Software Engineer",
+        industry="Technology",
+        salary_range="$80,000 - $100,000",
+        job_type="Remote",
+        location_city="San Francisco",
+        location_state="CA",
+        country="US",
+        date_posted="week"
+    )
+    result1 = run_single_test(test1, "Test 1: Software Engineer - Remote - SF, CA", use_strict_filter=True, min_threshold=80.0)
+    if result1:
+        all_results.append(("Test 1", result1))
+    
+    # Test 2: Data Scientist - On-site - Different location
+    test2 = JobScannerInput(
+        job_title="Data Scientist",
+        industry="Finance",
+        salary_range="$100,000 - $150,000",
+        job_type="On site",
+        location_city="New York",
+        location_state="NY",
+        country="US",
+        date_posted="month"
+    )
+    result2 = run_single_test(test2, "Test 2: Data Scientist - On-site - NYC", use_strict_filter=True, min_threshold=80.0)
+    if result2:
+        all_results.append(("Test 2", result2))
+    
+    # Test 3: Product Manager - Remote - No location
+    test3 = JobScannerInput(
+        job_title="Product Manager",
+        industry="Technology",
+        salary_range="",
+        job_type="Remote",
+        location_city="",
+        location_state="",
+        country="US",
+        date_posted="week"
+    )
+    result3 = run_single_test(test3, "Test 3: Product Manager - Remote - No Location", use_strict_filter=True, min_threshold=80.0)
+    if result3:
+        all_results.append(("Test 3", result3))
+    
+    # Test 4: Marketing Manager - Hybrid - Specific location
+    test4 = JobScannerInput(
+        job_title="Marketing Manager",
+        industry="Marketing",
+        salary_range="$60,000 - $90,000",
+        job_type="Hybrid",
+        location_city="Los Angeles",
+        location_state="CA",
+        country="US",
+        date_posted="week"
+    )
+    result4 = run_single_test(test4, "Test 4: Marketing Manager - Hybrid - LA, CA", use_strict_filter=True, min_threshold=80.0)
+    if result4:
+        all_results.append(("Test 4", result4))
+    
+    # Test 5: Raw API results (no filtering) - Software Engineer
+    test5 = JobScannerInput(
+        job_title="Software Engineer",
+        industry="Technology",
+        salary_range="$80,000 - $100,000",
+        job_type="Remote",
+        location_city="San Francisco",
+        location_state="CA",
+        country="US",
+        date_posted="week"
+    )
+    result5 = run_single_test(test5, "Test 5: Software Engineer - Raw API Results (No Filtering)", use_strict_filter=False)
+    if result5:
+        all_results.append(("Test 5", result5))
+    
+    # Overall Summary
+    if all_results:
+        print("=" * 80)
+        print("OVERALL TEST SUMMARY")
+        print("=" * 80)
+        print()
+        
+        summary_data = []
+        for test_name, result in all_results:
+            summary_data.append([
+                test_name,
+                result["total_jobs"],
+                f"{result['overall_accuracy']:.2f}%",
+                sum(1 for r in result["detailed_results"] if r["match_score"] == 100.0),
+                sum(1 for r in result["detailed_results"] if r["match_score"] >= 80),
+            ])
+        
+        print(tabulate(
+            summary_data,
+            headers=["Test", "Jobs Found", "Overall Accuracy", "Perfect (100%)", "High Quality (≥80%)"],
+            tablefmt="grid"
+        ))
+        print()
+        
+        avg_accuracy = sum(r["overall_accuracy"] for _, r in all_results) / len(all_results)
+        total_jobs = sum(r["total_jobs"] for _, r in all_results)
+        print(f"Average Overall Accuracy Across All Tests: {avg_accuracy:.2f}%")
+        print(f"Total Jobs Analyzed Across All Tests: {total_jobs}")
+        print("=" * 80)
 
 if __name__ == "__main__":
     test_accuracy()
