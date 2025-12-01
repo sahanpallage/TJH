@@ -87,10 +87,70 @@ def _parse_indeed_date(date_str: Optional[str]) -> str:
     return date_str
 
 
+def _filter_jobs_by_date(jobs: List[Dict[str, Any]], date_posted: Optional[str]) -> List[Dict[str, Any]]:
+    """
+    Filter jobs based on date_posted criteria.
+    
+    Args:
+        jobs: List of job dictionaries with date_posted field
+        date_posted: Date filter criteria ("24h", "day", "today", "week", "anytime", "all", or None)
+    
+    Returns:
+        Filtered list of jobs
+    """
+    if not date_posted or date_posted.lower() in ["anytime", "all", ""]:
+        return jobs
+    
+    date_lower = date_posted.lower()
+    now = datetime.now()
+    filtered_jobs = []
+    
+    for job in jobs:
+        job_date_str = job.get("date_posted", "")
+        if not job_date_str:
+            # If no date, include it (can't filter what we don't know)
+            filtered_jobs.append(job)
+            continue
+        
+        try:
+            # Parse the normalized date (should be YYYY-MM-DD format)
+            if re.match(r'^\d{4}-\d{2}-\d{2}', job_date_str):
+                job_date = datetime.strptime(job_date_str, '%Y-%m-%d')
+                # Calculate difference in days
+                diff = (now - job_date).days
+                
+                # Filter based on criteria
+                if "day" in date_lower or "today" in date_lower or "24h" in date_lower or "24" in date_lower:
+                    # Within 24 hours = 1 day or less
+                    if diff <= 1:
+                        filtered_jobs.append(job)
+                elif "week" in date_lower:
+                    # Within 7 days
+                    if diff <= 7:
+                        filtered_jobs.append(job)
+                elif "month" in date_lower:
+                    # Within 30 days
+                    if diff <= 30:
+                        filtered_jobs.append(job)
+                else:
+                    # Unknown filter, include the job
+                    filtered_jobs.append(job)
+            else:
+                # Can't parse date, include it to be safe
+                filtered_jobs.append(job)
+        except (ValueError, AttributeError) as e:
+            logger.debug(f"Could not parse job date '{job_date_str}' for filtering: {e}")
+            # If we can't parse, include it to be safe
+            filtered_jobs.append(job)
+    
+    return filtered_jobs
+
+
 def search_indeed_jobs(
     job_title: str,
     location: str = "",
     max_results: int = 20,
+    date_posted: Optional[str] = None,
     actor_id: Optional[str] = None
 ) -> List[Dict[str, Any]]:
     """
@@ -100,10 +160,11 @@ def search_indeed_jobs(
         job_title: Job title to search for
         location: Location to search in (e.g., "Canada", "US", "New York")
         max_results: Maximum number of jobs to return (default: 20)
+        date_posted: Filter by date posted ("24h", "day", "today", "week", "anytime", "all", or None)
         actor_id: Apify actor ID (default: uses DEFAULT_ACTOR_ID)
     
     Returns:
-        List of job dictionaries
+        List of job dictionaries filtered by date_posted if specified
     """
     if not job_title:
         raise ValueError("job_title is required")
@@ -269,6 +330,13 @@ def search_indeed_jobs(
         })
     
     logger.info(f"Cleaned and normalized {len(cleaned_jobs)} jobs")
+    
+    # Filter by date_posted if specified
+    if date_posted:
+        original_count = len(cleaned_jobs)
+        cleaned_jobs = _filter_jobs_by_date(cleaned_jobs, date_posted)
+        logger.info(f"Filtered {original_count} jobs to {len(cleaned_jobs)} jobs based on date_posted: {date_posted}")
+    
     return cleaned_jobs
 
 

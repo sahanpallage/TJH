@@ -280,7 +280,8 @@ async def search_jobs_indeed_endpoint(request: JobSearchRequest):
             search_indeed_jobs,
             request.jobTitle,
             location,
-            30  # max_results - capped at 30
+            30,  # max_results - capped at 30
+            request.datePosted or None  # date_posted filter
         )
         
         # Normalize and convert to response format

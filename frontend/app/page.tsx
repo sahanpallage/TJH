@@ -421,6 +421,23 @@ export default function Home() {
                 </span>
               </div>
 
+              <button
+                onClick={() => handleSearch("linkedin")}
+                disabled={disabledSearch}
+                className="inline-flex items-center justify-center gap-2 rounded-lg border border-indigo-400/60 bg-slate-900/70 px-4 py-2.5 text-sm font-semibold text-zinc-50 shadow-[0_10px_30px_rgba(30,64,175,0.75)] transition hover:border-sky-400/70 hover:bg-slate-900/80 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {loading && activeService === "linkedin" ? (
+                  <span className="inline-flex items-center gap-2">
+                    <span className="h-3 w-3 animate-spin rounded-full border border-zinc-300 border-t-transparent" />
+                    <span>Scanning LinkedIn…</span>
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-2">
+                    <span className="h-1.5 w-1.5 rounded-full bg-indigo-400" />
+                    <span className="cursor-pointer">Search via LinkedIn</span>
+                  </span>
+                )}
+              </button>
               <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
                 <button
                   onClick={() => handleSearch("jsearch")}
@@ -435,9 +452,7 @@ export default function Home() {
                   ) : (
                     <span className="inline-flex items-center gap-2">
                       <span className="h-1.5 w-1.5 rounded-full bg-sky-400 shadow-[0_0_14px_rgba(56,189,248,1)]" />
-                      <span className="cursor-pointer">
-                        Search via Platform 1
-                      </span>
+                      <span className="cursor-pointer">Search via JSearch</span>
                     </span>
                   )}
                 </button>
@@ -455,29 +470,7 @@ export default function Home() {
                   ) : (
                     <span className="inline-flex items-center gap-2">
                       <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                      <span className="cursor-pointer">
-                        Search via Platform 2
-                      </span>
-                    </span>
-                  )}
-                </button>
-
-                <button
-                  onClick={() => handleSearch("linkedin")}
-                  disabled={disabledSearch}
-                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-indigo-400/60 bg-slate-900/70 px-4 py-2.5 text-sm font-semibold text-zinc-50 shadow-[0_10px_30px_rgba(30,64,175,0.75)] transition hover:border-sky-400/70 hover:bg-slate-900/80 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {loading && activeService === "linkedin" ? (
-                    <span className="inline-flex items-center gap-2">
-                      <span className="h-3 w-3 animate-spin rounded-full border border-zinc-300 border-t-transparent" />
-                      <span>Scanning LinkedIn…</span>
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-2">
-                      <span className="h-1.5 w-1.5 rounded-full bg-indigo-400" />
-                      <span className="cursor-pointer">
-                        Search via LinkedIn
-                      </span>
+                      <span className="cursor-pointer">Search via Indeed</span>
                     </span>
                   )}
                 </button>
