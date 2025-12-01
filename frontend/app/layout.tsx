@@ -15,6 +15,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "TJH Job Hunter",
   description: "A polished job search UI for JSearch and Indeed.",
+  appleWebApp: {
+    title: "TJH",
+  },
 };
 
 export default function RootLayout({
