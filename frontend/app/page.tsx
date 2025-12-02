@@ -201,7 +201,7 @@ export default function Home() {
 
           <div className="mb-6 grid gap-4 rounded-2xl border border-white/10 bg-black/30 p-4 text-xs text-zinc-300 sm:grid-cols-3 sm:gap-3 sm:p-5">
             <div className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-sky-500/20 text-sky-300">
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-sky-500/20 text-sky-300 aspect-square">
                 <span className="text-[13px]">1</span>
               </div>
               <div>
@@ -212,20 +212,18 @@ export default function Home() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-300">
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-300 aspect-square">
                 <span className="text-[13px]">2</span>
               </div>
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-400">
                   Scan
                 </p>
-                <p className="text-[13px]">
-                  Hit Platform 1 / Platform 2 / LinkedIn
-                </p>
+                <p className="text-[13px]">Hit LinkedIn / JSearch / Indeed</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-indigo-500/20 text-indigo-300">
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-indigo-500/20 text-indigo-300 aspect-square">
                 <span className="text-[13px]">3</span>
               </div>
               <div>
@@ -237,7 +235,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="space-y-4 rounded-2xl border border-white/5 bg-black/40 p-4 sm:p-5">
+          <div className="space-y-4 rounded-2xl border border-white/10 bg-slate-900/90 p-4 sm:p-5">
             <div className="grid gap-4 sm:grid-cols-[minmax(0,1.4fr)_minmax(0,1.1fr)]">
               <div className="space-y-3">
                 <label
@@ -256,7 +254,7 @@ export default function Home() {
                   value={formData.jobTitle}
                   onChange={handleInputChange}
                   placeholder="e.g., Staff Frontend Engineer"
-                  className="w-full rounded-lg border border-white/10 bg-black/40 px-3.5 py-2.5 text-sm text-zinc-50 outline-none ring-0 transition focus:border-sky-400/70 focus:ring-2 focus:ring-sky-500/50"
+                  className="w-full rounded-lg border border-white/20 bg-zinc-700/60 px-3.5 py-2.5 text-sm text-zinc-50 outline-none ring-0 transition focus:border-sky-400/70 focus:ring-2 focus:ring-sky-500/50"
                   required
                 />
               </div>
@@ -278,7 +276,7 @@ export default function Home() {
                   value={formData.industry}
                   onChange={handleInputChange}
                   placeholder="e.g., Developer tools / AI infra"
-                  className="w-full rounded-lg border border-white/10 bg-black/40 px-3.5 py-2.5 text-sm text-zinc-50 outline-none ring-0 transition focus:border-emerald-400/70 focus:ring-2 focus:ring-emerald-500/50"
+                  className="w-full rounded-lg border border-white/20 bg-zinc-700/60 px-3.5 py-2.5 text-sm text-zinc-50 outline-none ring-0 transition focus:border-emerald-400/70 focus:ring-2 focus:ring-emerald-500/50"
                 />
               </div>
             </div>
@@ -298,7 +296,7 @@ export default function Home() {
                   value={formData.salaryMin}
                   onChange={handleInputChange}
                   placeholder="80,000"
-                  className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-zinc-50 outline-none ring-0 transition focus:border-sky-400/70 focus:ring-2 focus:ring-sky-500/50"
+                  className="w-full rounded-lg border border-white/20 bg-zinc-700/60 px-3 py-2 text-sm text-zinc-50 outline-none ring-0 transition focus:border-sky-400/70 focus:ring-2 focus:ring-sky-500/50"
                 />
               </div>
 
@@ -316,7 +314,7 @@ export default function Home() {
                   value={formData.salaryMax}
                   onChange={handleInputChange}
                   placeholder="220,000"
-                  className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-zinc-50 outline-none ring-0 transition focus:border-sky-400/70 focus:ring-2 focus:ring-sky-500/50"
+                  className="w-full rounded-lg border border-white/20 bg-zinc-700/60 px-3 py-2 text-sm text-zinc-50 outline-none ring-0 transition focus:border-sky-400/70 focus:ring-2 focus:ring-sky-500/50"
                 />
               </div>
 
@@ -332,7 +330,7 @@ export default function Home() {
                   name="jobType"
                   value={formData.jobType}
                   onChange={handleInputChange}
-                  className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-zinc-50 outline-none ring-0 transition focus:border-emerald-400/70 focus:ring-2 focus:ring-emerald-500/50"
+                  className="w-full rounded-lg border border-white/20 bg-zinc-700/60 px-3 py-2 text-sm text-zinc-50 outline-none ring-0 transition focus:border-emerald-400/70 focus:ring-2 focus:ring-emerald-500/50"
                 >
                   <option value="">Any</option>
                   <option value="Remote">Remote</option>
@@ -348,14 +346,14 @@ export default function Home() {
                   htmlFor="datePosted"
                   className="block text-[11px] font-medium uppercase tracking-[0.16em] text-zinc-400"
                 >
-                  Freshness
+                  Date Posted
                 </label>
                 <select
                   id="datePosted"
                   name="datePosted"
                   value={formData.datePosted}
                   onChange={handleInputChange}
-                  className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-zinc-50 outline-none ring-0 transition focus:border-emerald-400/70 focus:ring-2 focus:ring-emerald-500/50"
+                  className="w-full rounded-lg border border-white/20 bg-zinc-700/60 px-3 py-2 text-sm text-zinc-50 outline-none ring-0 transition focus:border-emerald-400/70 focus:ring-2 focus:ring-emerald-500/50"
                 >
                   <option value="">Any time</option>
                   <option value="day">Past 24 hours</option>
@@ -380,7 +378,7 @@ export default function Home() {
                   value={formData.city}
                   onChange={handleInputChange}
                   placeholder="San Francisco, London..."
-                  className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-zinc-50 outline-none ring-0 transition focus:border-sky-400/70 focus:ring-2 focus:ring-sky-500/50"
+                  className="w-full rounded-lg border border-white/20 bg-zinc-700/60 px-3 py-2 text-sm text-zinc-50 outline-none ring-0 transition focus:border-sky-400/70 focus:ring-2 focus:ring-sky-500/50"
                 />
               </div>
 
@@ -398,7 +396,7 @@ export default function Home() {
                   value={formData.country}
                   onChange={handleInputChange}
                   placeholder="US, UK, EU ..."
-                  className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-zinc-50 outline-none ring-0 transition focus:border-sky-400/70 focus:ring-2 focus:ring-sky-500/50"
+                  className="w-full rounded-lg border border-white/20 bg-zinc-700/60 px-3 py-2 text-sm text-zinc-50 outline-none ring-0 transition focus:border-sky-400/70 focus:ring-2 focus:ring-sky-500/50"
                 />
               </div>
 
@@ -414,10 +412,7 @@ export default function Home() {
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,1)]" />
                 <span>
                   Searches run directly against{" "}
-                  <span className="font-medium text-zinc-200">
-                    your backend
-                  </span>
-                  .
+                  <span className="font-medium text-zinc-200">the server</span>
                 </span>
               </div>
 
@@ -447,7 +442,7 @@ export default function Home() {
                   {loading && activeService === "jsearch" ? (
                     <span className="inline-flex items-center gap-2">
                       <span className="h-3 w-3 animate-spin rounded-full border border-slate-300 border-t-transparent" />
-                      <span>Scanning globally…</span>
+                      <span>Scanning Jsearch…</span>
                     </span>
                   ) : (
                     <span className="inline-flex items-center gap-2">
@@ -479,7 +474,7 @@ export default function Home() {
           </div>
         </div>
 
-        <aside className="subtle-card relative flex flex-col justify-between p-5 sm:p-6 lg:p-7">
+        <aside className="subtle-card relative flex flex-col justify-between p-5 sm:p-6 lg:p-7 bg-slate-900/90">
           <div className="absolute inset-0 -z-10 rounded-[0.9rem] border border-white/5" />
 
           <div className="space-y-4">
@@ -493,7 +488,7 @@ export default function Home() {
             </p>
 
             <div className="mt-4 grid gap-3 text-[11px] text-zinc-300">
-              <div className="flex items-start justify-between rounded-lg border border-zinc-700/80 bg-zinc-900/70 px-3 py-2.5">
+              <div className="flex items-start justify-between rounded-lg border border-zinc-700/80 bg-zinc-900/30 px-3 py-2.5">
                 <div>
                   <p className="font-semibold text-zinc-100">
                     Search confidence
@@ -507,7 +502,7 @@ export default function Home() {
                 </span>
               </div>
 
-              <div className="flex items-start justify-between rounded-lg border border-zinc-700/80 bg-zinc-900/70 px-3 py-2.5">
+              <div className="flex items-start justify-between rounded-lg border border-zinc-700/80 bg-zinc-900/30 px-3 py-2.5">
                 <div>
                   <p className="font-semibold text-zinc-100">
                     Three engines, one UI
@@ -518,7 +513,7 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="flex items-start justify-between rounded-lg border border-zinc-700/80 bg-zinc-900/70 px-3 py-2.5">
+              <div className="flex items-start justify-between rounded-lg border border-zinc-700/80 bg-zinc-900/30 px-3 py-2.5">
                 <div>
                   <p className="font-semibold text-zinc-100">
                     CSV as source-of-truth
@@ -531,7 +526,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="mt-6 flex items-center justify-between rounded-xl border border-zinc-700/80 bg-zinc-900/80 px-3.5 py-2.5 text-[11px] text-zinc-300">
+          <div className="mt-6 flex items-center justify-between rounded-xl border border-zinc-700/80 bg-zinc-900/40 px-3.5 py-2.5 text-[11px] text-zinc-300">
             <div className="space-y-0.5">
               <p className="font-semibold text-zinc-100">
                 {jobs.length > 0
@@ -580,11 +575,11 @@ export default function Home() {
                 Source:{" "}
                 <span className="font-medium text-zinc-200">
                   {activeService === "jsearch"
-                    ? "JSearch (RapidAPI)"
+                    ? "JSearch"
                     : activeService === "indeed"
                     ? "Indeed"
                     : activeService === "linkedin"
-                    ? "LinkedIn (JobSpy)"
+                    ? "LinkedIn"
                     : "Unknown"}
                 </span>
               </p>
