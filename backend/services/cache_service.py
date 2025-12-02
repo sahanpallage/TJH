@@ -2,7 +2,7 @@
 Simple cache service for job search results backed by Supabase Postgres.
 
 We use Supabase's REST API to store and retrieve cached responses for
-repeated queries so we don't keep hitting external APIs (JSearch / TheirStack)
+repeated queries so we don't keep hitting external APIs (JSearch / Indeed / LinkedIn)
 with identical parameters.
 
 Expected Supabase table (create this in your Supabase project):
@@ -41,12 +41,15 @@ class CacheResult:
   created_at: datetime
 
 
+# Default cache TTL: 7 days (in minutes)
+CACHE_TTL_MINUTES = 60 * 24 * 7
+
 class JobCache:
   """
   Very small, focused cache for job search responses using Supabase.
 
   Table schema (job_cache):
-    service     text   (e.g., 'jsearch', 'theirstack')
+    service     text   (e.g., 'jsearch', 'indeed', 'linkedin')
     cache_key   text   (hash of normalized request)
     response    jsonb  (JobSearchResponse payload)
     created_at  timestamptz
@@ -74,7 +77,7 @@ class JobCache:
     return sha256(f"{service}:{normalized}".encode("utf-8")).hexdigest()
 
   def get(
-    self, service: str, payload: Dict[str, Any], ttl_minutes: int = 60
+    self, service: str, payload: Dict[str, Any], ttl_minutes: int = CACHE_TTL_MINUTES
   ) -> Tuple[Optional[CacheResult], bool]:
     """
     Return (CacheResult or None, hit:boolean).
@@ -99,7 +102,7 @@ class JobCache:
         self.base_url,
         headers=self.headers,
         params=params,
-        timeout=5,
+        timeout=5,  # Add timeout to prevent hanging
       )
       resp.raise_for_status()
       rows = resp.json()

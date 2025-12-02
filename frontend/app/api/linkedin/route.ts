@@ -1,17 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8000";
+const API_KEY = process.env.NEXT_PUBLIC_API_KEY || process.env.API_KEY || "";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
     // Forward the request to the backend
+    const headers: HeadersInit = {
+      "Content-Type": "application/json",
+    };
+
+    // Add API key if configured (required in production)
+    if (API_KEY) {
+      headers["X-API-Key"] = API_KEY;
+    }
+
     const response = await fetch(`${BACKEND_URL}/api/jobs/linkedin`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers,
       body: JSON.stringify(body),
     });
 

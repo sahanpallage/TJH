@@ -14,7 +14,10 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "TJH Job Hunter",
-  description: "A polished job search UI for JSearch and TheirStack.",
+  description: "A polished job search UI for JSearch and Indeed.",
+  appleWebApp: {
+    title: "TJH",
+  },
 };
 
 export default function RootLayout({
@@ -25,7 +28,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gradient-to-br from-[#020617] via-[#020617] to-[#0f172a] text-zinc-50 min-h-screen`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-linear-to-br from-[#020617] via-[#020617] to-[#0f172a] text-zinc-50 min-h-screen`}
       >
         <div className="relative overflow-hidden">
           <div className="pointer-events-none fixed inset-0 -z-10">
@@ -37,7 +40,7 @@ export default function RootLayout({
           <header className="border-b border-white/5 bg-black/20 backdrop-blur-md sticky top-0 z-20">
             <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
               <div className="flex items-center gap-2">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-500 via-sky-400 to-emerald-400 shadow-[0_0_25px_rgba(56,189,248,0.75)]">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-linear-to-tr from-blue-500 via-sky-400 to-emerald-400 shadow-[0_0_25px_rgba(56,189,248,0.75)]">
                   <span className="text-xs font-black tracking-[0.18em] text-white">
                     TJH
                   </span>

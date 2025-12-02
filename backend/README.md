@@ -12,7 +12,6 @@ Configure these as environment variables on your host (Railway/Render/Fly/VPS) o
 
 - `RAPID_API_KEY` – RapidAPI key for JSearch
 - `LINKEDIN_API_KEY` – Optional, if you later use the LinkedIn scraper
-- `THEIRSTACK_API_KEY` – TheirStack API key
 - `SUPABASE_URL` – Supabase project URL (used by `JobCache`)
 - `SUPABASE_KEY` – Supabase key (service role or anon, depending on your setup)
 - `DATABASE_URL` – Optional Postgres URL for additional data
@@ -24,7 +23,6 @@ Example env file (do **not** commit real values). You can copy `env.example` to 
 
 ```bash
 RAPID_API_KEY=your-rapidapi-key-here
-THEIRSTACK_API_KEY=your-theirstack-api-key-here
 SUPABASE_URL=https://your-project-id.supabase.co
 SUPABASE_KEY=your-supabase-key-here
 CORS_ORIGINS=http://localhost:3000,https://your-frontend-domain.vercel.app

@@ -45,7 +45,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeService, setActiveService] = useState<
-    "jsearch" | "theirstack" | "linkedin" | null
+    "jsearch" | "indeed" | "linkedin" | null
   >(null);
 
   const downloadCsv = () => {
@@ -105,8 +105,8 @@ export default function Home() {
     const source =
       activeService === "jsearch"
         ? "jsearch"
-        : activeService === "theirstack"
-        ? "theirstack"
+        : activeService === "indeed"
+        ? "indeed"
         : activeService === "linkedin"
         ? "linkedin"
         : "jobs";
@@ -132,9 +132,7 @@ export default function Home() {
     }));
   };
 
-  const handleSearch = async (
-    service: "jsearch" | "theirstack" | "linkedin"
-  ) => {
+  const handleSearch = async (service: "jsearch" | "indeed" | "linkedin") => {
     setLoading(true);
     setError(null);
     setActiveService(service);
@@ -190,7 +188,7 @@ export default function Home() {
           <div className="mb-7 space-y-4">
             <h1 className="text-balance text-3xl font-semibold tracking-tight text-zinc-50 sm:text-4xl lg:text-[2.6rem]">
               Find roles that match your stack,
-              <span className="bg-gradient-to-r from-sky-400 via-cyan-300 to-emerald-300 bg-clip-text text-transparent">
+              <span className="bg-linear-to-r from-sky-400 via-cyan-300 to-emerald-300 bg-clip-text text-transparent">
                 {" "}
                 not just your title.
               </span>
@@ -222,7 +220,7 @@ export default function Home() {
                   Scan
                 </p>
                 <p className="text-[13px]">
-                  Hit JSearch / TheirStack / LinkedIn
+                  Hit Platform 1 / Platform 2 / LinkedIn
                 </p>
               </div>
             </div>
@@ -423,6 +421,23 @@ export default function Home() {
                 </span>
               </div>
 
+              <button
+                onClick={() => handleSearch("linkedin")}
+                disabled={disabledSearch}
+                className="inline-flex items-center justify-center gap-2 rounded-lg border border-indigo-400/60 bg-slate-900/70 px-4 py-2.5 text-sm font-semibold text-zinc-50 shadow-[0_10px_30px_rgba(30,64,175,0.75)] transition hover:border-sky-400/70 hover:bg-slate-900/80 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {loading && activeService === "linkedin" ? (
+                  <span className="inline-flex items-center gap-2">
+                    <span className="h-3 w-3 animate-spin rounded-full border border-zinc-300 border-t-transparent" />
+                    <span>Scanning LinkedIn…</span>
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-2">
+                    <span className="h-1.5 w-1.5 rounded-full bg-indigo-400" />
+                    <span className="cursor-pointer">Search via LinkedIn</span>
+                  </span>
+                )}
+              </button>
               <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
                 <button
                   onClick={() => handleSearch("jsearch")}
@@ -437,49 +452,25 @@ export default function Home() {
                   ) : (
                     <span className="inline-flex items-center gap-2">
                       <span className="h-1.5 w-1.5 rounded-full bg-sky-400 shadow-[0_0_14px_rgba(56,189,248,1)]" />
-                      <span className="cursor-pointer">
-                        Search via Platform 1
-                      </span>
+                      <span className="cursor-pointer">Search via JSearch</span>
                     </span>
                   )}
                 </button>
 
                 <button
-                  onClick={() => handleSearch("theirstack")}
+                  onClick={() => handleSearch("indeed")}
                   disabled={disabledSearch}
                   className="inline-flex items-center justify-center gap-2 rounded-lg border border-emerald-400/60 bg-slate-900/60 px-4 py-2.5 text-sm font-semibold text-zinc-50 shadow-[0_10px_30px_rgba(6,95,70,0.85)] transition hover:border-emerald-400/80 hover:bg-slate-900/70 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  {loading && activeService === "theirstack" ? (
+                  {loading && activeService === "indeed" ? (
                     <span className="inline-flex items-center gap-2">
                       <span className="h-3 w-3 animate-spin rounded-full border border-zinc-400 border-t-transparent" />
-                      <span>Scanning globally…</span>
+                      <span>Scanning Indeed…</span>
                     </span>
                   ) : (
                     <span className="inline-flex items-center gap-2">
                       <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                      <span className="cursor-pointer">
-                        Search via Platform 2
-                      </span>
-                    </span>
-                  )}
-                </button>
-
-                <button
-                  onClick={() => handleSearch("linkedin")}
-                  disabled={disabledSearch}
-                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-indigo-400/60 bg-slate-900/70 px-4 py-2.5 text-sm font-semibold text-zinc-50 shadow-[0_10px_30px_rgba(30,64,175,0.75)] transition hover:border-sky-400/70 hover:bg-slate-900/80 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {loading && activeService === "linkedin" ? (
-                    <span className="inline-flex items-center gap-2">
-                      <span className="h-3 w-3 animate-spin rounded-full border border-zinc-300 border-t-transparent" />
-                      <span>Scanning LinkedIn…</span>
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-2">
-                      <span className="h-1.5 w-1.5 rounded-full bg-indigo-400" />
-                      <span className="cursor-pointer">
-                        Search via LinkedIn
-                      </span>
+                      <span className="cursor-pointer">Search via Indeed</span>
                     </span>
                   )}
                 </button>
@@ -519,10 +510,10 @@ export default function Home() {
               <div className="flex items-start justify-between rounded-lg border border-zinc-700/80 bg-zinc-900/70 px-3 py-2.5">
                 <div>
                   <p className="font-semibold text-zinc-100">
-                    Two engines, one UI
+                    Three engines, one UI
                   </p>
                   <p className="mt-1 text-[11px] text-zinc-400">
-                    Compare JSearch and TheirStack results for the same role.
+                    Compare each engine's results for the same role.
                   </p>
                 </div>
               </div>
@@ -590,8 +581,8 @@ export default function Home() {
                 <span className="font-medium text-zinc-200">
                   {activeService === "jsearch"
                     ? "JSearch (RapidAPI)"
-                    : activeService === "theirstack"
-                    ? "TheirStack"
+                    : activeService === "indeed"
+                    ? "Indeed"
                     : activeService === "linkedin"
                     ? "LinkedIn (JobSpy)"
                     : "Unknown"}
